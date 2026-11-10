@@ -62,7 +62,8 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
  <button class="g" onclick="mv(1)">▶</button>
  <button class="g" onclick="goToday()">Today</button>
  <button onclick="logToday()">＋ Log Today</button>
- <button onclick="window.print()">🖨 Print / Save as PDF (8.5 x 13)</button>
+ <button onclick="makePdf()">📄 Download PDF (Long Bond 8.5 x 13)</button>
+ <button class="g" onclick="makePdf(true)">🖨 Print PDF (open &amp; print)</button><button class="g" onclick="window.print()">🖨 Browser print</button>
  <button class="g" onclick="openSet()">⚙ Settings</button>
  <button class="g" onclick="exp()">⬇ Backup</button>
  <button class="g" onclick="$('#imp').click()">⬆ Restore</button>
@@ -117,6 +118,7 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
  <div class="act"><button class="g" onclick="$('#sdlg').close()">Cancel</button><button onclick="saveSet()">Save</button></div>
 </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -277,5 +279,73 @@ cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);last=pt(e)};
 cv.onpointermove=e=>{if(!last)return;const p=pt(e),x=cv.getContext('2d');x.strokeStyle='#111';x.lineWidth=3;x.lineCap='round';x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();last=p};
 cv.onpointerup=cv.onpointercancel=()=>{last=null};
 function sigUse(){const d=fit(cv);if(d){tmp[sgN]=d;sigUI()}$('#sgd').close()}
+function b64(u){const s=atob(u.split(',')[1]),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a}
+async function makePdf(pr){
+ if(typeof PDFLib==='undefined'){alert('Could not load the PDF tool. Check your internet connection and try again.');return}
+ const w0=pr?window.open('','_blank'):null;
+ const{PDFDocument,StandardFonts,rgb}=PDFLib,s=db.s,H=936,IN=72,x0=.2*IN,W=8.1*IN,K=.6;
+ const doc=await PDFDocument.create(),pg=doc.addPage([612,H]);
+ const F=await doc.embedFont(StandardFonts.Helvetica),B=await doc.embedFont(StandardFonts.HelveticaBold),I=await doc.embedFont(StandardFonts.HelveticaOblique);
+ const safe=v=>String(v==null?'':v).replace(/[^\n\x20-\x7E\xA0-\xFF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026]/g,'?');
+ const tw=(v,f,z)=>f.widthOfTextAtSize(v,z);
+ function txt(v,x,yy,z,f,al){v=safe(v);const w=tw(v,f,z);pg.drawText(v,{x:al==='c'?x-w/2:al==='r'?x-w:x,y:H-yy,size:z,font:f,color:rgb(0,0,0)});return w}
+ function ln(a,b,c,d,w){pg.drawLine({start:{x:a,y:H-b},end:{x:c,y:H-d},thickness:w||K,color:rgb(0,0,0)})}
+ function wrap(v,f,z,mw){const out=[];for(const para of safe(v).split('\n')){let cur='';for(const word of para.split(/\s+/).filter(Boolean)){const tr=cur?cur+' '+word:word;if(tw(tr,f,z)<=mw)cur=tr;else{if(cur)out.push(cur);cur=word;while(tw(cur,f,z)>mw&&cur.length>1){let i=cur.length-1;while(i>1&&tw(cur.slice(0,i),f,z)>mw)i--;out.push(cur.slice(0,i));cur=cur.slice(i)}}}out.push(cur)}return out}
+ const u=[6,9.5703,10,9.5703,9.8555,8,81.1406],tot=u.reduce((a,b)=>a+b,0),cx=[x0];u.forEach((v,i)=>cx.push(cx[i]+v/tot*W));
+ const fs=({S:8,M:8.6,L:9,X:9.2})[s.fs]||9,dim=new Date(y,m+1,0).getDate();
+ // header block
+ txt(s.name,x0+W/2,38,13,B,'c');ln(x0,42,x0+W,42,1.4);txt('NAME',x0+W/2,52,9,F,'c');
+ if(s.tin)txt('TIN NO.: '+s.tin,(cx[6]+cx[7])/2,64,9,F,'c');
+ txt('For the month of',x0,83,10.5,B,'l');
+ txt(MN[m]+' 1-'+dim,x0+200,81,10.5,B,'c');ln(x0+95,84,x0+305,84,.8);
+ txt(', '+y,x0+309,83,10.5,B,'l');ln(x0+309,84,x0+345,84,.8);
+ // table header
+ const yt=92,ym=yt+15,yd=yt+30,FOOT=175,rh=Math.min(21,(910-FOOT-yd)/dim),yE=yd+dim*rh;
+ txt('DAY',(cx[0]+cx[1])/2,yt+19,9.5,B,'c');
+ txt('A.M.',(cx[1]+cx[3])/2,yt+11,9.5,B,'c');txt('P.M.',(cx[3]+cx[5])/2,yt+11,9.5,B,'c');
+ ['Arrival','Departure','Arrival','Departure'].forEach((v,i)=>txt(v,(cx[i+1]+cx[i+2])/2,ym+10.5,7.8,B,'c'));
+ txt('NO. OF',(cx[5]+cx[6])/2,yt+12,7.6,B,'c');txt('HOURS',(cx[5]+cx[6])/2,yt+22,7.6,B,'c');
+ txt('ACCOMPLISHMENT REPORT',(cx[6]+cx[7])/2,yt+19,9.5,B,'c');
+ // grid
+ ln(x0,yt,x0+W,yt);ln(cx[1],ym,cx[5],ym);ln(x0,yd,x0+W,yd);
+ [0,1,3,5,6,7].forEach(i=>ln(cx[i],yt,cx[i],yE));[2,4].forEach(i=>ln(cx[i],ym,cx[i],yE));
+ // days
+ let days=0,hrs=0;
+ for(let d=1;d<=dim;d++){
+  const dow=new Date(y,m,d).getDay(),e=db.e[key(d)],top=yd+(d-1)*rh,mid=top+rh/2+fs*.33;
+  ln(x0,top+rh,x0+W,top+rh);
+  txt(String(d),cx[1]-4,mid,fs,F,'r');
+  let rt='',wk=false;
+  if(e){
+   if(e.type==='work'){e.t.forEach((v,i)=>txt(f12(v),(cx[i+1]+cx[i+2])/2,mid,fs,F,'c'));txt(String(e.h),(cx[5]+cx[6])/2,mid,fs,F,'c');if(+e.h>0){days++;hrs+=+e.h}rt=e.r||''}
+   else rt=e.type+' '+(e.r||'');
+  }else if(dow==0||dow==6){rt=DN[dow];wk=true}
+  if(rt){
+   let z=fs,L;const mw=cx[7]-cx[6]-8;
+   for(;;){L=wrap(rt,F,z,mw);if(L.length<=2||z<=6)break;z-=.2}
+   const lh=z*1.12,yb=wk?top+1.5+z*.9:top+(rh-Math.min(L.length,2)*lh)/2+z*.86;
+   L.slice(0,2).forEach((v,i)=>txt(v,cx[6]+4,yb+i*lh,z,F,'l'));
+  }
+ }
+ // footer
+ let yy=yE+13;
+ txt('TOTAL number of days:',x0,yy,9.5,F,'l');ln(x0+98,yy+1,x0+113,yy+1,.6);txt(hrs+'hrs = '+days+' days',x0+W*.2,yy,9.5,F,'l');
+ yy+=17;
+ const words=safe('I CERTIFY on my honor that the above is true and correct report of the work performed, record which was daily at the time of arrival and departure from the office.').split(' ');
+ let cur='',first=true,lines=[];
+ for(const w of words){const tr=cur?cur+' '+w:w;if(tw(tr,F,9.5)<=W-(first?22:0))cur=tr;else{lines.push([cur,first]);first=false;cur=w}}lines.push([cur,first]);
+ lines.forEach(([v,f1])=>{txt(v,x0+(f1?22:0),yy,9.5,F,'l');yy+=12});
+ yy+=8;
+ const cE=x0+W*.879,cA=x0+W*.77;
+ async function sig(du,c,base){if(!du)return;try{const im=await doc.embedPng(b64(du)),sc=Math.min(110/im.width,34/im.height);pg.drawImage(im,{x:c-im.width*sc/2,y:H-base+7,width:im.width*sc,height:im.height*sc})}catch(e){}}
+ let nb=yy+26+9;await sig(s.sig1,cE,nb);
+ const wN=txt(s.name,cE,nb,9.5,B,'c');ln(cE-wN/2,nb+1.5,cE+wN/2,nb+1.5,.8);txt(s.pos,cE,nb+11,9,I,'c');
+ let ab=nb+11+6+9;txt('APPROVED BY:',cA,ab,9.5,B,'c');
+ nb=ab+4+26+9;await sig(s.sig2,cA,nb);
+ const wA=txt(s.ap,cA,nb,9.5,B,'c');ln(cA-wA/2,nb+1.5,cA+wA/2,nb+1.5,.8);txt(s.apPos,cA,nb+11,9,I,'c');
+ const bytes=await doc.save(),url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+ if(w0){w0.location.href=url}else{const a=document.createElement('a');a.href=url;a.download='DTR-'+MN[m]+'-'+y+'.pdf';document.body.appendChild(a);a.click();a.remove()}
+}
+
 boot();
 </script></body></html>

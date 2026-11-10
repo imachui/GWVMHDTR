@@ -87,7 +87,7 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
  <label>Email<input id="aE" type="email" autocomplete="email"></label>
  <label>Password (min. 6 characters)<input id="aP" type="password" autocomplete="current-password"></label>
  <div id="aM" style="color:#b91c1c;font-size:13px;margin-top:8px;min-height:18px"></div>
- <div class="act" style="justify-content:flex-start;flex-wrap:wrap"><button onclick="auth('in')">Sign in</button><button class="g" onclick="auth('up')">Create account</button><button class="g" onclick="google()">Continue with Google</button></div>
+ <div class="act" style="justify-content:flex-start;flex-wrap:wrap"><button onclick="auth('in')">Sign in</button><button class="g" onclick="auth('up')">Create account</button><button class="g" onclick="google()">Continue with Google</button><button class="g" onclick="forgot()">Forgot password</button></div>
 </dialog>
 <dialog id="dlg"><h3 id="dT" style="margin:0"></h3>
  <label>Type of day<select id="fType"><option value="work">Present (Work)</option><option value="HOLIDAY">Holiday</option><option value="LEAVE">Leave</option><option value="ABSENT">Absent</option></select></label>
@@ -113,17 +113,19 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
  <div class="act"><button class="g" onclick="$('#sdlg').close()">Cancel</button><button onclick="saveSet()">Save</button></div>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// ===== SUPABASE SETTINGS (paste yours here; leave empty to use this browser only) =====
-const SB_URL="",SB_KEY="";
-// =====================================================================================
+// ===== FIREBASE SETTINGS (paste your firebaseConfig values here; leave empty to use this browser only) =====
+const FB={apiKey:"",authDomain:"",projectId:"",appId:""};
+// ============================================================================================================
 const $=s=>document.querySelector(s),p2=n=>String(n).padStart(2,'0'),KEY='dtr_v1';
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const CLOUD=!!(SB_URL&&SB_KEY),DEF={name:'',pos:'',tin:'',ap:'',apPos:'',sig1:'',sig2:'',def:['08:00','12:00','12:45','17:00'],h:'8'};
-let sb,user=null,timer=null;
-if(CLOUD){if(typeof supabase==='undefined')alert('Could not load Supabase. Check your internet connection.');else sb=supabase.createClient(SB_URL,SB_KEY)}
+const CLOUD=!!(FB.apiKey&&FB.projectId),DEF={name:'',pos:'',tin:'',ap:'',apPos:'',sig1:'',sig2:'',def:['08:00','12:00','12:45','17:00'],h:'8'};
+let fa,fdb,user=null,timer=null;
+if(CLOUD){if(typeof firebase==='undefined')alert('Could not load Firebase. Check your internet connection.');else{firebase.initializeApp(FB);fa=firebase.auth();fdb=firebase.firestore()}}
 function norm(d){d=d||{};d.s=Object.assign({},DEF,d.s);d.e=d.e||{};return d}
 let db=norm(null);
 if(!CLOUD){try{db=norm(JSON.parse(localStorage.getItem(KEY)))}catch(e){}}
@@ -134,37 +136,43 @@ function save(){
 }
 async function cloudSave(){
  timer=null;if(!user)return;
- const{error}=await sb.from('dtr_data').upsert({user_id:user.id,data:db,updated_at:new Date().toISOString()});
- if(error)stat('⚠ Not saved: '+error.message,'#b91c1c');else stat('✓ Saved to cloud');
+ try{await fdb.collection('dtr_data').doc(user.uid).set({json:JSON.stringify(db),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});stat('✓ Saved to cloud')}
+ catch(e){stat('⚠ Not saved: '+e.message,'#b91c1c')}
 }
 async function load(){
- const{data,error}=await sb.from('dtr_data').select('data').eq('user_id',user.id).maybeSingle();
- if(error){stat('⚠ '+error.message,'#b91c1c');return}
- db=norm(data&&data.data);stat('✓ Synced');
+ try{const s=await fdb.collection('dtr_data').doc(user.uid).get();db=norm(s.exists?JSON.parse(s.data().json):null);stat('✓ Synced')}
+ catch(e){stat('⚠ '+e.message,'#b91c1c')}
 }
 async function enter(u){
- if(user&&user.id===u.id)return;user=u;
+ if(user&&user.uid===u.uid)return;user=u;
  $('#auth').open&&$('#auth').close();$('#who').textContent=u.email||'';$('#outB').style.display='';
  await load();render();if(!db.s.name)openSet();
 }
 async function boot(){
- render();if(!CLOUD){if(!db.s.name)openSet();return}if(!sb)return;
+ render();if(!CLOUD){if(!db.s.name)openSet();return}if(!fa)return;
  $('#paper').style.visibility='hidden';
- sb.auth.onAuthStateChange((ev,s)=>{
-  if(s&&s.user)enter(s.user).then(()=>{$('#paper').style.visibility=''});
-  else if(ev==='SIGNED_OUT'){user=null;db=norm(null);$('#who').textContent='';$('#outB').style.display='none';$('#paper').style.visibility='hidden';render();$('#auth').showModal()}
+ fa.onAuthStateChanged(u=>{
+  if(u)enter(u).then(()=>{$('#paper').style.visibility=''});
+  else{user=null;db=norm(null);$('#who').textContent='';$('#outB').style.display='none';$('#paper').style.visibility='hidden';render();$('#auth').open||$('#auth').showModal()}
  });
- const{data}=await sb.auth.getSession();
- if(!data.session)$('#auth').showModal();
 }
+function fe(e){const m={'auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'Wrong email or password.','auth/email-already-in-use':'This email already has an account. Click Sign in.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Please enter a valid email.','auth/too-many-requests':'Too many attempts. Try again later.','auth/unauthorized-domain':'This website is not in Firebase Authorized domains.'};return m[e.code]||e.message}
+function amsg(s,ok){$('#aM').style.color=ok?'#0f766e':'#b91c1c';$('#aM').textContent=s}
 async function auth(k){
- const email=$('#aE').value.trim(),password=$('#aP').value;$('#aM').textContent='';
- const r=k==='up'?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
- if(r.error){$('#aM').textContent=r.error.message;return}
- if(k==='up'&&!r.data.session){$('#aM').style.color='#0f766e';$('#aM').textContent='Account created. Check your email to confirm it, then sign in.'}
+ const email=$('#aE').value.trim(),pw=$('#aP').value;amsg('');
+ try{k==='up'?await fa.createUserWithEmailAndPassword(email,pw):await fa.signInWithEmailAndPassword(email,pw)}catch(e){amsg(fe(e))}
 }
-function google(){sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}})}
-function out(){sb.auth.signOut()}
+async function forgot(){
+ const email=$('#aE').value.trim();if(!email){amsg('Type your email first.');return}
+ try{await fa.sendPasswordResetEmail(email);amsg('Password reset email sent. Check your inbox (and Spam).',true)}catch(e){amsg(fe(e))}
+}
+async function google(){
+ const p=new firebase.auth.GoogleAuthProvider();amsg('');
+ try{await fa.signInWithPopup(p)}catch(e){
+  if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment')fa.signInWithRedirect(p);
+  else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')amsg(fe(e))}
+}
+function out(){fa.signOut()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&CLOUD&&user&&!timer&&!document.querySelector('dialog[open]'))load().then(render)});
 if(!CLOUD)try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

@@ -18,28 +18,29 @@ select{padding:6px;border-radius:6px;border:1px solid #9bb}
 #warn{display:none;margin:0 16px;padding:8px 12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px}
 .wrap{overflow-x:auto;padding:8px 16px 40px}
 .wrap{zoom:1}
-.paper{background:#fff;width:8.3in;margin:0 auto;padding:0;box-shadow:0 2px 12px #0003;font-family:Calibri,Carlito,Arial,sans-serif;color:#000;font-size:8.8pt;zoom:1.2}
+:root{--f:9.2pt;--rh:.305in}
+.paper{background:#fff;width:8.3in;margin:0 auto;padding:0;box-shadow:0 2px 12px #0003;font-family:Calibri,Carlito,Arial,sans-serif;color:#000;font-size:var(--f);zoom:1.2}
 .logos{height:.45in;display:flex;justify-content:space-between;align-items:center}
 .logos img{height:.43in;width:.43in;object-fit:contain}
-.nm{text-align:center;font-size:11pt;font-weight:700;border-bottom:1.5px solid #000;padding:1px 0 1px}
-.nl{text-align:center;font-size:8.8pt}
-.tin{margin-left:39.5%;width:60.5%;text-align:center;font-size:8.8pt;min-height:.2in}
-.mo{font-weight:700;font-size:9.5pt;margin:2px 0 4px}.mo u{display:inline-block;min-width:3.2in;text-align:center}
-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:8.8pt}
+.nm{text-align:center;font-size:calc(var(--f) + 2.2pt);font-weight:700;border-bottom:1.5px solid #000;padding:1px 0 1px}
+.nl{text-align:center;font-size:var(--f)}
+.tin{margin-left:39.5%;width:60.5%;text-align:center;font-size:var(--f);min-height:.2in}
+.mo{font-weight:700;font-size:calc(var(--f) + .7pt);margin:2px 0 4px}.mo u{display:inline-block;min-width:3.2in;text-align:center}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:var(--f)}
 th,td{border:1px solid #000;padding:0 3px;text-align:center;vertical-align:middle}
-th{font-size:9.5pt;font-weight:700}
+th{font-size:calc(var(--f) + .7pt);font-weight:700}th.c3{padding:0;font-size:calc(var(--f) - .5pt);white-space:nowrap}th.c2{padding:0;font-size:calc(var(--f) - .6pt);letter-spacing:-.02em;white-space:nowrap}
 td.r{text-align:left;padding:0 3px}
-.rc{line-height:1.1;white-space:pre-line;max-height:.27in;overflow:hidden}
+.rc{line-height:1.1;white-space:pre-line;max-height:calc(var(--f) * 2.2 + 1pt);overflow:hidden}
 td.dn{text-align:right;padding-right:6px}
-tr.d{height:.305in}tr.d td{height:.305in;box-sizing:border-box}
+tr.d{height:var(--rh)}tr.d td{height:var(--rh);box-sizing:border-box}
 td.wk{text-align:left;vertical-align:top}
 tr.today td{background:#e6fffa}
-.meas{position:absolute;left:-9999px;top:0;visibility:hidden;width:calc(8.3in*.6051 - 12px);font:8.8pt/1.1 Calibri,Carlito,Arial,sans-serif;white-space:pre-line}
+.meas{position:absolute;left:-9999px;top:0;visibility:hidden;width:calc(8.3in*.6051 - 12px);font:var(--f)/1.1 Calibri,Carlito,Arial,sans-serif;white-space:pre-line}
 .np button{padding:1px 6px;font-size:11px;margin:0 1px}
-.ft{position:relative;font-size:9.5pt;margin-top:4px;height:.22in}.ft .ts{position:absolute;left:19%}
+.ft{position:relative;font-size:calc(var(--f) + .7pt);margin-top:4px;height:.22in}.ft .ts{position:absolute;left:19%}
 .ft u{display:inline-block;width:.8in}
-.cert{font-size:9.5pt;margin:4px 0 12px;text-indent:.3in;text-align:justify}
-.sg{text-align:center;font-size:9.5pt}.sg b{display:block;text-decoration:underline}.sg i{display:block}
+.cert{font-size:calc(var(--f) + .7pt);margin:4px 0 12px;text-indent:.3in;text-align:justify}
+.sg{text-align:center;font-size:calc(var(--f) + .7pt)}.sg b{display:block;text-decoration:underline}.sg i{display:block}
 .s1{width:36%;margin-left:70%}.s2{width:36%;margin-left:59%;margin-top:.12in}.s2 b:first-child{text-decoration:none;text-align:center}.sp{height:.3in;position:relative}.sp img{position:absolute;left:50%;bottom:-.1in;transform:translateX(-50%);max-height:.45in;max-width:100%}
 dialog{max-height:92vh;overflow:auto;border:0;border-radius:10px;padding:18px;width:min(460px,94vw);box-shadow:0 6px 30px #0006}
 dialog label{display:block;font-size:13px;margin-top:8px}
@@ -66,7 +67,8 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
  <button class="g" onclick="exp()">⬇ Backup</button>
  <button class="g" onclick="$('#imp').click()">⬆ Restore</button>
  <input type="file" id="imp" accept=".json" hidden onchange="imp(this)">
- <span id="st" style="font-size:13px"></span><span class="sum" id="sum"></span>
+ <label style="font-size:13px">Print size <select id="fsz" onchange="setFs(this.value)"><option value="S">Small (Excel size)</option><option value="M">Medium</option><option value="L">Large</option><option value="X">Extra large</option></select></label>
+ <span id="fw" style="font-size:13px;color:#b91c1c"></span><span id="st" style="font-size:13px"></span><span class="sum" id="sum"></span>
 </div>
 <div id="warn">⚠ Time to back up your data (⬇ Backup) so it is not lost if the browser data is cleared.</div>
 <div class="wrap"><div class="paper" id="paper">
@@ -125,7 +127,7 @@ const FB={apiKey:"AIzaSyDQwq5vscsTaC5WdH1JcacPHE6rQ5ggsJ8",authDomain:"gwvmh-dtr
 const $=s=>document.querySelector(s),p2=n=>String(n).padStart(2,'0'),KEY='dtr_v1';
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const CLOUD=!!(FB.apiKey&&FB.projectId),DEF={name:'',pos:'',tin:'',ap:'',apPos:'',sig1:'',sig2:'',def:['08:00','12:00','12:45','17:00'],h:'8'};
+const CLOUD=!!(FB.apiKey&&FB.projectId),DEF={name:'',pos:'',tin:'',ap:'',apPos:'',sig1:'',sig2:'',fs:'L',def:['08:00','12:00','12:45','17:00'],h:'8'};
 let fa,fdb,user=null,timer=null;
 if(CLOUD){if(typeof firebase==='undefined')alert('Could not load Firebase. Check your internet connection.');else{firebase.initializeApp(FB);fa=firebase.auth();fdb=firebase.firestore()}}
 function norm(d){d=d||{};d.s=Object.assign({},DEF,d.s);d.e=d.e||{};return d}
@@ -193,7 +195,10 @@ function mv(n){m+=n;if(m>11){m=0;y++}if(m<0){m=11;y--}render()}
 function goToday(){const n=new Date();y=n.getFullYear();m=n.getMonth();render()}
 function tick(){const n=new Date();$('#clock').innerHTML=DN[n.getDay()]+', '+MN[n.getMonth()]+' '+n.getDate()+', '+n.getFullYear()+'<br>'+n.toLocaleTimeString()}
 setInterval(tick,1000);tick();
+const FS={S:[8,.285],M:[8.8,.305],L:[9.2,.305],X:[9.6,.295]};
+function setFs(v){db.s.fs=v;save();render()}
 function render(){
+ const fz=FS[db.s.fs]||FS.L;document.documentElement.style.setProperty('--f',fz[0]+'pt');document.documentElement.style.setProperty('--rh',fz[1]+'in');$('#fsz').value=FS[db.s.fs]?db.s.fs:'L';
  const s=db.s,dim=new Date(y,m+1,0).getDate(),now=new Date();let h='',days=0,hrs=0;
  $('#mm').value=m;$('#yy').value=y;
  for(let d=1;d<=dim;d++){
@@ -211,6 +216,8 @@ function render(){
  $('#pName').textContent=s.name;$('#pTin').textContent=s.tin?'TIN NO.: '+s.tin:'';
  $('#pMonth').innerHTML=`For the month of <u>${MN[m]} 1-${dim}</u> , ${y}`;
  $('#tHrs').textContent=hrs+'hrs = '+days+' days';
+ let bad=0;for(const k in db.e){const e=db.e[k];if(k.startsWith(y+'-'+p2(m+1))&&e.r&&nLines(e.r)>2)bad++}
+ $('#fw').textContent=bad?'⚠ '+bad+' log(s) too long for this print size — click ✎ and shorten, or choose a smaller size.':'';
  $('#sum').textContent=`${days} days · ${hrs} hrs`;
  si('#sg1',s.sig1);si('#sg2',s.sig2);$('#sgName').textContent=s.name;$('#sgPos').textContent=s.pos;$('#sgAp').textContent=s.ap;$('#sgApPos').textContent=s.apPos;
  const nb=!CLOUD&&Object.keys(db.e).length&&(!db.lb||Date.now()-db.lb>30*864e5);$('#warn').style.display=nb?'block':'none';

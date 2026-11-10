@@ -120,7 +120,7 @@ dialog input,dialog select,dialog textarea{width:100%;padding:6px;border:1px sol
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 // ===== FIREBASE SETTINGS (paste your firebaseConfig values here; leave empty to use this browser only) =====
-const FB={apiKey:"",authDomain:"",projectId:"",appId:""};
+const FB={apiKey:"AIzaSyDQwq5vscsTaC5WdH1JcacPHE6rQ5ggsJ8",authDomain:"gwvmh-dtr.firebaseapp.com",projectId:"gwvmh-dtr",appId:"1:444615889009:web:f8b1378d5684cb419ecbd0"};
 // ============================================================================================================
 const $=s=>document.querySelector(s),p2=n=>String(n).padStart(2,'0'),KEY='dtr_v1';
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -142,13 +142,18 @@ async function cloudSave(){
  catch(e){stat('⚠ Not saved: '+e.message,'#b91c1c')}
 }
 async function load(){
- try{const s=await fdb.collection('dtr_data').doc(user.uid).get();db=norm(s.exists?JSON.parse(s.data().json):null);stat('✓ Synced')}
+ try{const s=await fdb.collection('dtr_data').doc(user.uid).get();db=norm(s.exists?JSON.parse(s.data().json):null);stat('✓ Synced');return s.exists}
  catch(e){stat('⚠ '+e.message,'#b91c1c')}
 }
 async function enter(u){
  if(user&&user.uid===u.uid)return;user=u;
  $('#auth').open&&$('#auth').close();$('#who').textContent=u.email||'';$('#outB').style.display='';
- await load();render();if(!db.s.name)openSet();
+ const had=await load();
+ if(had===false){
+  try{const l=JSON.parse(localStorage.getItem(KEY)),n=l&&l.e?Object.keys(l.e).length:0;
+   if(n&&confirm('Found '+n+' log(s) saved in this browser. Upload them to your account now?')){db=norm(l);await cloudSave()}}catch(e){}
+ }
+ render();if(!db.s.name)openSet();
 }
 async function boot(){
  render();if(!CLOUD){if(!db.s.name)openSet();return}if(!fa)return;
